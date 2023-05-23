@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pylogger
+  labels:
+    tags.datadoghq.com/env: "development" # Unified service tag - Deployment Env tag
+    tags.datadoghq.com/service: "pylogger" # Unified service tag - Deployment Service tag
+    tags.datadoghq.com/version: "1.0" # Unified service tag - Deployment Version tag
+    # tags.datadoghq.com/source: "python"
+    app: pylogger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pylogger
+  template:
+    metadata:
+      labels:
+        app: pylogger
+        # admission.datadoghq.com/enabled: "true"
+        tags.datadoghq.com/env: "development" # Unified service tag - Deployment Env tag
+        tags.datadoghq.com/service: "pylogger" # Unified service tag - Deployment Service tag
+        tags.datadoghq.com/version: "1.0" # Unified service tag - Deployment Version tag
+        # tags.datadoghq.com/source: "python"
+      # annotations:
+        # admission.datadoghq.com/python-lib.version: "latest"
+    spec:
+      containers:
+      - name: pylogger
+        image: airevahn/pylogger:v1.0
+        ports:
+        - containerPort: 8081
+        volumeMounts:
+            - name: apmsocketpath
+              mountPath: /var/run/datadog
+        env:
+            - name: DD_ENV
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/env']
+            - name: DD_SERVICE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/service']
+            - name: DD_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/version']
+            - name: DD_PROFILING_ENABLED
+              value: "true"
+            - name: DD_LOGS_INJECTION
+              value: "true"
+      volumes:
+        - hostPath:
+            path: /var/run/datadog/
+          name: apmsocketpath
